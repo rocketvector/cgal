@@ -7,7 +7,7 @@ cmake_minimum_required(VERSION 2.8.11)
 
 set( CGAL_BRANCH_BUILD ON CACHE INTERNAL "Create CGAL from a Git branch" FORCE)
 
-include(${CMAKE_SOURCE_DIR}/Installation/cmake/modules/CGAL_SCM.cmake)
+include(${PROJECT_SOURCE_DIR}/Installation/cmake/modules/CGAL_SCM.cmake)
 
 # add option for duplicate file detection
 option( CGAL_REPORT_DUPLICATE_FILES "Switch on to start (naive) detection of duplicate source- and headerfiles in packages" OFF)
