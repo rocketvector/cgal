@@ -3,7 +3,7 @@
 #include "Scene_polygon_soup_item_config.h"
 #include  <CGAL/Three/Scene_item.h>
 #include "Polyhedron_type.h"
-#include "CGAL/Surface_mesh/Surface_mesh.h"
+#include "SMesh_type.h"
 
 #include <boost/foreach.hpp>
 #include <boost/array.hpp>
@@ -98,6 +98,7 @@ struct Polygon_soup
 
 
 class Scene_polyhedron_item;
+class Scene_surface_mesh_item;
 
 class SCENE_POLYGON_SOUP_ITEM_EXPORT Scene_polygon_soup_item 
         : public CGAL::Three::Scene_item
@@ -117,6 +118,7 @@ public:
 
     bool load(std::istream& in);
     void load(Scene_polyhedron_item*);
+    void load(Scene_surface_mesh_item*);
     bool isDataColored();
 
     bool save(std::ostream& out) const;
@@ -146,7 +148,7 @@ public Q_SLOTS:
     void shuffle_orientations();
     bool orient();
     bool exportAsPolyhedron(Polyhedron*);
-    bool exportAsSurfaceMesh(CGAL::Surface_mesh<Point_3>*);
+    bool exportAsSurfaceMesh(SMesh*);
     void inside_out();
 
     void setDisplayNonManifoldEdges(const bool);

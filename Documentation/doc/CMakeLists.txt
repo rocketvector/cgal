@@ -32,6 +32,11 @@ if(NOT DOXYGEN_FOUND)
   return()
 endif()
 
+#starting from cmake 3.9 the usage of DOXYGEN_EXECUTABLE is deprecated
+if(TARGET Doxygen::doxygen)
+  get_property(DOXYGEN_EXECUTABLE TARGET Doxygen::doxygen PROPERTY IMPORTED_LOCATION)
+endif()
+
 # Visual Studio users might appreciate this
 # set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
@@ -78,6 +83,10 @@ function(configure_doxygen_package CGAL_PACKAGE_NAME)
   if(EXISTS "${CGAL_PACKAGE_DIR}/examples")
     file(APPEND ${CGAL_DOC_PACKAGE_DEFAULTS} "EXAMPLE_PATH = ${CGAL_PACKAGE_DIR}/examples\n")
   endif()
+  if(CGAL_GENERATE_XML)
+    file(APPEND ${CGAL_DOC_PACKAGE_DEFAULTS} "GENERATE_XML = YES\n")
+  endif()
+
   file(APPEND ${CGAL_DOC_PACKAGE_DEFAULTS} "GENERATE_TAGFILE = ${CGAL_DOC_TAG_GEN_DIR}/${CGAL_PACKAGE_NAME}.tag\n")
   file(APPEND ${CGAL_DOC_PACKAGE_DEFAULTS} "STRIP_FROM_PATH = ${CGAL_PACKAGE_DOC_DIR}/\n")
   file(APPEND ${CGAL_DOC_PACKAGE_DEFAULTS} "STRIP_FROM_PATH += ${CGAL_PACKAGE_DIR}/include/\n")
@@ -199,7 +208,7 @@ set(CGAL_DOC_DXY_DIR "${CMAKE_BINARY_DIR}/doc_dxy")
 file(MAKE_DIRECTORY "${CGAL_DOC_DXY_DIR}")
 
 #Setting the resource directory depending on the version of doxygen
-set(CGAL_DOC_RESOURCE_DIR_DEFAULT "${CMAKE_CURRENT_LIST_DIR}/resources/1.8.4")
+set(CGAL_DOC_RESOURCE_DIR_DEFAULT "${CMAKE_CURRENT_LIST_DIR}/resources/1.8.13")
 
 #  first look if resources for the specific doxygen version is available, fallback
 #  on the default otherwise

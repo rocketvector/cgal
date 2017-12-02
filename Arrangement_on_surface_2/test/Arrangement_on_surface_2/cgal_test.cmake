@@ -1,15 +1,7 @@
-#! /bin/bash
+# This CMake script is a translation of the bash script `./cgal_test_base`
+# to the CMake language. It defines the targets to compile, as well as the
+# tests to run with CTest.
 
-# This is a script for the CGAL test suite. Such a script must obey
-# the following rules:
-#
-# - the name of the script is cgal_test
-# - for every target two one line messages are written to the file 'error.txt'
-#     the first one indicates if the compilation was successful
-#     the second one indicates if the execution was successful
-#   if one of the two was not successful, the line should start with 'ERROR:'
-# - running the script should not require any user interaction
-# - the script should clean up object files and executables
 
 # SET PARAMETERS FOR cgal_test
 
@@ -581,8 +573,8 @@ function(test_segment_traits_adaptor)
 
   compile_test_with_flags(test_traits_adaptor segments "${flags}")
 #  if [ -n "${SUCCESS}" ] ; then
-  execute_commands_traits_adaptor( segments segments_traits_adaptor 
-    COMPARE_Y_POSITION COMPARE_CW_AROUND_POINT COMPARE_Y_AT_X_LEFT 
+  execute_commands_traits_adaptor( segments segments_traits_adaptor
+    COMPARE_Y_POSITION COMPARE_CW_AROUND_POINT COMPARE_Y_AT_X_LEFT
     ARE_MERGEABLE MERGE IS_IN_X_RANGE IS_BETWEEN_CW)
 endfunction()
 
@@ -597,8 +589,8 @@ function(test_linear_traits_adaptor)
 
   compile_test_with_flags( test_traits_adaptor linear "${flags}")
 
-  execute_commands_traits_adaptor( linear linear_traits_adaptor 
-    COMPARE_Y_AT_X_LEFT ARE_MERGEABLE MERGE IS_IN_X_RANGE 
+  execute_commands_traits_adaptor( linear linear_traits_adaptor
+    COMPARE_Y_AT_X_LEFT ARE_MERGEABLE MERGE IS_IN_X_RANGE
     COMPARE_Y_POSITION IS_BETWEEN_CW COMPARE_CW_AROUND_POINT)
 endfunction()
 
@@ -614,8 +606,8 @@ function(test_spherical_arcs_traits_adaptor)
 
   compile_test_with_flags( test_traits_adaptor geodesic_arcs_on_sphere "${flags}")
 
-  execute_commands_traits_adaptor( spherical_arcs spherical_arcs_traits_adaptor 
-    COMPARE_Y_AT_X_LEFT ARE_MERGEABLE MERGE IS_IN_X_RANGE 
+  execute_commands_traits_adaptor( spherical_arcs spherical_arcs_traits_adaptor
+    COMPARE_Y_AT_X_LEFT ARE_MERGEABLE MERGE IS_IN_X_RANGE
     COMPARE_Y_POSITION IS_BETWEEN_CW COMPARE_CW_AROUND_POINT)
 endfunction()
 
@@ -873,6 +865,10 @@ endfunction()
 #---------------------------------------------------------------------#
 function(test_polycurve_conic_traits)
 #  echo polycurve test starting
+  if($ENV{CGAL_DISABLE_GMP})
+    MESSAGE(STATUS "test_polycurve_conic_traits requires CORE and will not be executed")
+    return()
+  endif()
   set(nt ${CORE_EXPR_NT})
   set(kernel ${CARTESIAN_KERNEL})
   set(geom_traits ${POLYCURVE_CONIC_GEOM_TRAITS})
@@ -940,6 +936,10 @@ endfunction()
 # polycurve bezier traits
 #---------------------------------------------------------------------#
 function(test_polycurve_bezier_traits)
+  if($ENV{CGAL_DISABLE_GMP})
+    MESSAGE(STATUS "test_polycurve_bezier_traits requires CORE and will not be executed")
+    return()
+  endif()
   set(nt ${CORE_EXPR_NT})
   set(kernel ${CARTESIAN_KERNEL})
   set(geom_traits ${POLYCURVE_BEZIER_GEOM_TRAITS})
@@ -1045,6 +1045,10 @@ endfunction()
 # conic traits
 #---------------------------------------------------------------------#
 function(test_conic_traits)
+  if($ENV{CGAL_DISABLE_GMP})
+    MESSAGE(STATUS "test_conic_traits requires CORE and will not be executed")
+    return()
+  endif()
   set(nt ${CORE_EXPR_NT})
   set(kernel ${CARTESIAN_KERNEL})
   set(geom_traits ${CORE_CONIC_GEOM_TRAITS})
@@ -1172,6 +1176,10 @@ endfunction()
 # bezier traits
 #---------------------------------------------------------------------#
 function(test_bezier_traits)
+  if($ENV{CGAL_DISABLE_GMP})
+    MESSAGE(STATUS "test_bezier_traits requires CORE and will not be executed")
+    return()
+  endif()
   set(nt ${CORE_EXPR_NT})
   set(kernel ${CARTESIAN_KERNEL})
   set(geom_traits ${BEZIER_GEOM_TRAITS})
@@ -1215,6 +1223,10 @@ endfunction()
 # rational arc traits
 #---------------------------------------------------------------------#
 function(test_rational_arc_traits)
+  if($ENV{CGAL_DISABLE_GMP})
+    MESSAGE(STATUS "test_rational_arc_traits requires CORE and will not be executed")
+    return()
+  endif()
   set(nt ${CORE_INT_NT})
   set(kernel ${UNIVARIATE_ALGEBRAIC_KERNEL})
   set(geom_traits ${RATIONAL_ARC_GEOM_TRAITS})
@@ -1275,7 +1287,10 @@ endfunction()
 #---------------------------------------------------------------------#
 function(test_algebraic_traits_core)
   #TODO: Adapt
-
+  if($ENV{CGAL_DISABLE_GMP})
+    MESSAGE(STATUS "test_algebraic_traits_core requires CORE and will not be executed")
+    return()
+  endif()
   set(nt ${CORE_INT_NT})
   set(kernel ${UNIVARIATE_ALGEBRAIC_KERNEL})
   set(geom_traits ${ALGEBRAIC_GEOM_TRAITS})
@@ -1365,3 +1380,5 @@ compile_and_run(test_unbounded_removal)
 compile_and_run(test_spherical_removal)
 
 compile_and_run(test_io)
+
+compile_and_run(test_sgm)
