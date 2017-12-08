@@ -27,7 +27,6 @@
 
 #include <CGAL/license/Mesh_3.h>
 
-
 #include <CGAL/Mesh_3/config.h>
 #include <CGAL/Mesh_3/global_parameters.h>
 #include <CGAL/refine_mesh_3.h>
@@ -147,6 +146,7 @@ init_c3t3(C3T3& c3t3, const MeshDomain& domain, const MeshCriteria&,
   typedef std::vector<std::pair<Point_3, Index> > Initial_points_vector;
   typedef typename Initial_points_vector::iterator Ipv_iterator;
   typedef typename C3T3::Vertex_handle Vertex_handle;
+  std::cout << "[CGAL] init_c3t3 started." << std::endl;
   
   // Mesh initialization : get some points and add them to the mesh
   Initial_points_vector initial_points;
@@ -155,6 +155,8 @@ init_c3t3(C3T3& c3t3, const MeshDomain& domain, const MeshCriteria&,
                                              nb_initial_points);
   else //use default number of points
     domain.construct_initial_points_object()(std::back_inserter(initial_points));
+  std::cout << "[CGAL] init_c3t3: " << initial_points.size()
+      << " points constructed" << std::endl;
 
   typename C3T3::Triangulation::Geom_traits::Construct_weighted_point_3 p2wp =
       c3t3.triangulation().geom_traits().construct_weighted_point_3_object();
@@ -198,6 +200,7 @@ init_c3t3_with_features(C3T3& c3t3,
                         const MeshCriteria& criteria,
                         bool nonlinear = false)
 {
+  std::cout << "[CGAL] init_c3t3_with_features started..." << std::endl;
   typedef typename MeshCriteria::Edge_criteria Edge_criteria;
   typedef Edge_criteria_sizing_field_wrapper<Edge_criteria> Sizing_field;
 
@@ -205,7 +208,9 @@ init_c3t3_with_features(C3T3& c3t3,
     protect_edges(c3t3, domain, Sizing_field(criteria.edge_criteria_object()));
   protect_edges.set_nonlinear_growth_of_balls(nonlinear);
   
+  std::cout << "[CGAL] init_c3t3_with_features protect edges started...";
   protect_edges(true);
+  std::cout << "done." << std::endl;
 }
   
 
@@ -281,10 +286,13 @@ struct C3t3_initializer < C3T3, MD, MC, true, CGAL::Tag_true >
         helper.update_restricted_facets();
 
         if (c3t3.number_of_facets() == 0) {
+          std::cout << "[CGAL] initialization yield 0 facets, need more init..." << std::endl;
           need_more_init = true;
         }
       }
       if(need_more_init) {
+        std::cout << "[CGAL] init_c3t3_with_features need more initialization, "
+            << "falling back to init_c3t3..." << std::endl;
         init_c3t3(c3t3, domain, criteria, nb_initial_points);
       }
     }
@@ -450,6 +458,7 @@ void make_mesh_3_impl(C3T3& c3t3,
   CGAL::get_default_random() = CGAL::Random(0);
 #endif
 
+  std::cout << "[CGAL] initialization started." << std::endl;
   // Initialize c3t3
   internal::Mesh_3::C3t3_initializer< 
     C3T3,
@@ -462,12 +471,30 @@ void make_mesh_3_impl(C3T3& c3t3,
             mesh_options.nonlinear_growth_of_balls,
             mesh_options.number_of_initial_points);
 
+  std::cout << "[CGAL] C3t3 initialization completed with "
+      << c3t3.number_of_cells() << " cells, "
+      << c3t3.number_of_facets() << " facets" << std::endl;
+  std::cout << "[CGAL] C3t3 triangulation has "
+      << c3t3.triangulation().number_of_vertices() << " vertices "
+      << c3t3.triangulation().number_of_facets() << " facets "
+      << c3t3.triangulation().number_of_cells() << " cells" << std::endl;
+  std::ofstream fout("tmp.mesh");
+  c3t3.output_to_medit(fout);
+  fout.close();
   CGAL_assertion( c3t3.triangulation().dimension() == 3 );
 
   // Build mesher and launch refinement process
   // Don't reset c3t3 as we just created it
+  std::cout << "[CGAL] refinement started." << std::endl;
   refine_mesh_3(c3t3, domain, criteria,
                 exude, perturb, odt, lloyd, parameters::no_reset_c3t3(), mesh_options);
+  std::cout << "[CGAL] C3t3 refinement completed with "
+      << c3t3.number_of_cells() << " cells, "
+      << c3t3.number_of_facets() << " facets" << std::endl;
+  std::cout << "[CGAL] C3t3 triangulation has "
+      << c3t3.triangulation().number_of_vertices() << " vertices "
+      << c3t3.triangulation().number_of_facets() << " facets "
+      << c3t3.triangulation().number_of_cells() << " cells" << std::endl;
 }
 
 
