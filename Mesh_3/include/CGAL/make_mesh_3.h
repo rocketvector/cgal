@@ -478,9 +478,9 @@ void make_mesh_3_impl(C3T3& c3t3,
       << c3t3.triangulation().number_of_vertices() << " vertices "
       << c3t3.triangulation().number_of_facets() << " facets "
       << c3t3.triangulation().number_of_cells() << " cells" << std::endl;
-  std::ofstream fout("tmp.mesh");
-  c3t3.output_to_medit(fout);
-  fout.close();
+  //std::ofstream fout("tmp.mesh");
+  //c3t3.output_to_medit(fout);
+  //fout.close();
   CGAL_assertion( c3t3.triangulation().dimension() == 3 );
 
   // Build mesher and launch refinement process
