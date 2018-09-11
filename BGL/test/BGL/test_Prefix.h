@@ -10,11 +10,8 @@
 
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 
+#include <CGAL/Polyhedron_3.h>
 #include <CGAL/Polyhedron_items_with_id_3.h>
-#include <CGAL/IO/Polyhedron_iostream.h>
-
-#include <CGAL/boost/graph/graph_traits_Polyhedron_3.h>
-
 #include <CGAL/Linear_cell_complex_for_bgl_combinatorial_map_helper.h>
 #include <CGAL/boost/graph/graph_traits_Linear_cell_complex_for_combinatorial_map.h>
 #include <CGAL/boost/graph/properties_Linear_cell_complex_for_combinatorial_map.h>
@@ -22,10 +19,9 @@
 #ifdef CGAL_USE_SURFACE_MESH
 #include <CGAL/Surface_mesh.h>
 #include <CGAL/Surface_mesh/IO.h>
-
-#include <CGAL/boost/graph/graph_traits_Surface_mesh.h>
-#include <CGAL/boost/graph/properties_Surface_mesh.h>
 #endif
+
+#include <CGAL/boost/graph/io.h>
 
 // ATTN: If you change this kernel remember to also hack
 // properties_PolyMesh_ArrayKernelT.h accordingly
@@ -106,18 +102,17 @@ static const char* data[] =
   "data/rombus.off", "data/tetrahedron.off", "data/triangle.off",
   "data/triangular_hole.off", "data/cube.off" };
 
+/*
 #if defined(CGAL_USE_OPENMESH)
 bool read_a_mesh(OMesh& s, const std::string& str) {
   return OpenMesh::IO::read_mesh(s, str);
 }
 #endif
+*/
 
-#if defined(CGAL_USE_SURFACE_MESH)
-// quick hack to generically read a file
-bool read_a_mesh(SM& s, const std::string& str) {
-  return CGAL::read_off(s, str);
-}
-#endif
+template<typename T>
+bool read_a_mesh(T& m, const std::string& str)
+{ return CGAL::read_off(str, m); }
 
 bool read_a_mesh(Polyhedron& p, const std::string& str) {
   std::ifstream in(str.c_str());
@@ -125,17 +120,6 @@ bool read_a_mesh(Polyhedron& p, const std::string& str) {
   bool success = in.good();
   if(success)
     set_halfedgeds_items_id(p);
-  return success;
-}
-
-bool read_a_mesh(LCC& lcc, const std::string& str) {
-  std::ifstream in(str.c_str());
-  bool success = in.good();
-  if(success)
-  {
-    CGAL::read_off(in, lcc);
-    assert(lcc.is_valid());
-  }
   return success;
 }
 

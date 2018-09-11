@@ -14,6 +14,7 @@
 //
 // $URL$
 // $Id$
+// SPDX-License-Identifier: LGPL-3.0+
 // 
 // Author(s) : Andreas Fabri
 
@@ -27,6 +28,7 @@
 #include <CGAL/boost/graph/properties.h>
 #include <CGAL/boost/graph/internal/Has_member_clear.h>
 #include <CGAL/function_objects.h>
+#include <boost/unordered_set.hpp>
 
 
 namespace CGAL {
@@ -737,7 +739,7 @@ bool is_degenerate_triangle_face(
 
 /**
  * \ingroup PkgBGLHelperFct
- * \brief Creates a triangulated regular prism
+ * \brief Creates a triangulated regular prism, outward oriented,
  * having `nb_vertices` vertices in each of its bases and adds it to the graph `g`.
  * If `center` is (0, 0, 0), then the first point of the prism is (`radius`, `height`, 0)
  * \param nb_vertices the number of vertices per base. It must be greater than or equal to 3.
@@ -831,7 +833,7 @@ make_regular_prism(
 
 /**
  * \ingroup PkgBGLHelperFct
- * \brief Creates a pyramid having `nb_vertices` vertices in its base and adds it to the graph `g`.
+ * \brief Creates a pyramid, outward oriented, having `nb_vertices` vertices in its base and adds it to the graph `g`.
  *
  * If `center` is (0, 0, 0), then the first point of the base is (`radius`, 0`, 0)
  * \param nb_vertices the number of vertices in the base. It must be greater than or equal to 3.
@@ -917,7 +919,7 @@ make_pyramid(
 
 /**
  * \ingroup PkgBGLHelperFct
- * \brief Creates an icosahedron centered in `center` and adds it to the graph `g`.
+ * \brief Creates an icosahedron, outward oriented, centered in `center` and adds it to the graph `g`.
  * \param g the graph in which the icosahedron will be created.
  * \param center the center of the sphere in which the icosahedron is inscribed.
  * \param radius the radius of the sphere in which the icosahedron is inscribed.
@@ -958,48 +960,48 @@ make_icosahedron(
 
   std::vector<vertex_descriptor> face;
   face.resize(3);
-  face[1] = v_vertices[0]; face[0] = v_vertices[11]; face[2] = v_vertices[5];
+  face[1] = v_vertices[0]; face[0] = v_vertices[5]; face[2] = v_vertices[11];
   Euler::add_face(face, g);
-  face[1] = v_vertices[0]; face[0] = v_vertices[5]; face[2] = v_vertices[1];
+  face[1] = v_vertices[0]; face[0] = v_vertices[1]; face[2] = v_vertices[5];
   Euler::add_face(face, g);
-  face[1] = v_vertices[0]; face[0] = v_vertices[1]; face[2] = v_vertices[7];
+  face[1] = v_vertices[0]; face[0] = v_vertices[7]; face[2] = v_vertices[1];
   Euler::add_face(face, g);
-  face[1] = v_vertices[0]; face[0] = v_vertices[7]; face[2] = v_vertices[10];
+  face[1] = v_vertices[0]; face[0] = v_vertices[10]; face[2] = v_vertices[7];
   Euler::add_face(face, g);
-  face[1] = v_vertices[0]; face[0] = v_vertices[10]; face[2] = v_vertices[11];
-  Euler::add_face(face, g);
-
-  face[1] = v_vertices[1] ; face[0] = v_vertices[5] ; face[2] = v_vertices[9];
-  Euler::add_face(face, g);
-  face[1] = v_vertices[5] ; face[0] = v_vertices[11]; face[2] = v_vertices[4];
-  Euler::add_face(face, g);
-  face[1] = v_vertices[11]; face[0] = v_vertices[10]; face[2] = v_vertices[2];
-  Euler::add_face(face, g);
-  face[1] = v_vertices[10]; face[0] = v_vertices[7] ; face[2] = v_vertices[6];
-  Euler::add_face(face, g);
-  face[1] = v_vertices[7] ; face[0] = v_vertices[1] ; face[2] = v_vertices[8];
+  face[1] = v_vertices[0]; face[0] = v_vertices[11]; face[2] = v_vertices[10];
   Euler::add_face(face, g);
 
-  face[1] = v_vertices[3] ; face[0] = v_vertices[9] ; face[2] = v_vertices[4];
+  face[1] = v_vertices[1] ; face[0] = v_vertices[9] ; face[2] = v_vertices[5];
   Euler::add_face(face, g);
-  face[1] = v_vertices[3] ; face[0] = v_vertices[4] ; face[2] = v_vertices[2];
+  face[1] = v_vertices[5] ; face[0] = v_vertices[4]; face[2] = v_vertices[11];
   Euler::add_face(face, g);
-  face[1] = v_vertices[3] ; face[0] = v_vertices[2] ; face[2] = v_vertices[6];
+  face[1] = v_vertices[11]; face[0] = v_vertices[2]; face[2] = v_vertices[10];
   Euler::add_face(face, g);
-  face[1] = v_vertices[3] ; face[0] = v_vertices[6] ; face[2] = v_vertices[8];
+  face[1] = v_vertices[10]; face[0] = v_vertices[6] ; face[2] = v_vertices[7];
   Euler::add_face(face, g);
-  face[1] = v_vertices[3] ; face[0] = v_vertices[8] ; face[2] = v_vertices[9];
+  face[1] = v_vertices[7] ; face[0] = v_vertices[8] ; face[2] = v_vertices[1];
   Euler::add_face(face, g);
 
-  face[1] = v_vertices[4] ; face[0] = v_vertices[9] ; face[2] = v_vertices[5] ;
-  Euler::add_face(face, g);
-  face[1] = v_vertices[2] ; face[0] = v_vertices[4] ; face[2] = v_vertices[11];
-  Euler::add_face(face, g);
-  face[1] = v_vertices[6] ; face[0] = v_vertices[2] ; face[2] = v_vertices[10];
-  Euler::add_face(face, g);
-  face[1] = v_vertices[8] ; face[0] = v_vertices[6] ; face[2] = v_vertices[7] ;
-  Euler::add_face(face, g);
-  face[1] = v_vertices[9] ; face[0] = v_vertices[8] ; face[2] = v_vertices[1] ;
+  face[1] = v_vertices[3] ; face[0] = v_vertices[4] ; face[2] = v_vertices[9];
+  Euler::add_face(face, g);                                                  
+  face[1] = v_vertices[3] ; face[0] = v_vertices[2] ; face[2] = v_vertices[4];
+  Euler::add_face(face, g);                                                  
+  face[1] = v_vertices[3] ; face[0] = v_vertices[6] ; face[2] = v_vertices[2];
+  Euler::add_face(face, g);                                                  
+  face[1] = v_vertices[3] ; face[0] = v_vertices[8] ; face[2] = v_vertices[6];
+  Euler::add_face(face, g);                                                  
+  face[1] = v_vertices[3] ; face[0] = v_vertices[9] ; face[2] = v_vertices[8];
+  Euler::add_face(face, g);                                                  
+                                                                             
+  face[1] = v_vertices[4] ; face[0] = v_vertices[5] ; face[2] = v_vertices[9] ;
+  Euler::add_face(face, g);                                                  
+  face[1] = v_vertices[2] ; face[0] = v_vertices[11] ; face[2] = v_vertices[4];
+  Euler::add_face(face, g);                                                   
+  face[1] = v_vertices[6] ; face[0] = v_vertices[10] ; face[2] = v_vertices[2];
+  Euler::add_face(face, g);                                                  
+  face[1] = v_vertices[8] ; face[0] = v_vertices[7] ; face[2] = v_vertices[6] ;
+  Euler::add_face(face, g);                                                  
+  face[1] = v_vertices[9] ; face[0] = v_vertices[1] ; face[2] = v_vertices[8] ;
   Euler::add_face(face, g);
 
   return halfedge(v_vertices[1], v_vertices[0], g).first;
@@ -1118,18 +1120,12 @@ inline
 typename boost::disable_if<Has_member_clear<FaceGraph>, void>::type
 clear_impl(FaceGraph& g)
 {
-  typedef typename boost::graph_traits<FaceGraph>::edge_descriptor     edge_descriptor;
-  typedef typename boost::graph_traits<FaceGraph>::vertex_descriptor   vertex_descriptor;
-  typedef typename boost::graph_traits<FaceGraph>::face_descriptor     face_descriptor;
-  BOOST_FOREACH(edge_descriptor ed, edges(g)) {
-    remove_edge(ed, g);
-  }
-  BOOST_FOREACH(vertex_descriptor vd, vertices(g)) {
-    remove_vertex(vd, g);
-  }
-  BOOST_FOREACH(face_descriptor fd, faces(g)) {
-    remove_face(fd, g);
-  }
+  while(boost::begin(edges(g))!=boost::end(edges(g)))
+    remove_edge(*boost::begin(edges(g)), g);
+  while(boost::begin(faces(g))!=boost::end(faces(g)))
+    remove_face(*boost::begin(faces(g)), g);
+  while(boost::begin(vertices(g))!=boost::end(vertices(g)))
+    remove_vertex(*boost::begin(vertices(g)), g);
 }
 
 } //end of internal namespace
@@ -1152,10 +1148,10 @@ clear_impl(FaceGraph& g)
 template<typename FaceGraph>
 void clear(FaceGraph& g)
 { 
-  internal::clear_impl(g); 
-  CGAL_postcondition(num_edges(g) == 0);
-  CGAL_postcondition(num_vertices(g) == 0);
-  CGAL_postcondition(num_faces(g) == 0);
+  internal::clear_impl(g);
+  CGAL_postcondition(std::distance(boost::begin(edges(g)),boost::end(edges(g))) == 0);
+  CGAL_postcondition(std::distance(boost::begin(vertices(g)),boost::end(vertices(g))) == 0);
+  CGAL_postcondition(std::distance(boost::begin(faces(g)),boost::end(faces(g))) == 0);
 }
 
 /**
@@ -1173,7 +1169,6 @@ bool is_empty(const FaceGraph& g)
 {
   return boost::empty(vertices(g));
 }
-
 
 } // namespace CGAL
 

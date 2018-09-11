@@ -14,6 +14,7 @@
 //
 // $URL$
 // $Id$
+// SPDX-License-Identifier: GPL-3.0+
 //
 //
 // Author(s)     : Monique Teillaud <Monique.Teillaud@sophia.inria.fr>
@@ -25,6 +26,8 @@
 #define CGAL_REGULAR_TRIANGULATION_3_H
 
 #include <CGAL/license/Triangulation_3.h>
+
+#include <CGAL/disable_warnings.h>
 
 #include <CGAL/basic.h>
 
@@ -66,11 +69,6 @@
 #ifdef CGAL_CONCURRENT_TRIANGULATION_3_ADD_TEMPORARY_POINTS_ON_FAR_SPHERE
 #include <CGAL/point_generators_3.h>
 #endif
-
-#if defined(BOOST_MSVC)
-#  pragma warning(push)
-#  pragma warning(disable:4355) // complaint about using 'this' to
-#endif                          // initialize a member
 
 namespace CGAL {
 
@@ -146,7 +144,10 @@ namespace CGAL {
     typedef typename Gt::Object_3      Object;
 
     //Tag to distinguish Delaunay from regular triangulations
-    typedef Tag_true   Weighted_tag;
+    typedef Tag_true                   Weighted_tag;
+
+    // Tag to distinguish periodic triangulations from others
+    typedef Tag_false                  Periodic_tag;
 
 #ifndef CGAL_CFG_USING_BASE_MEMBER_BUG_2
     using Tr_Base::geom_traits;
@@ -360,7 +361,7 @@ namespace CGAL {
         // Insert "num_points_seq" points sequentially
         // (or more if dim < 3 after that)
         size_t num_points_seq = (std::min)(num_points, (size_t)100);
-        while (dimension() < 3 || i < num_points_seq)
+        while (i < num_points_seq || (dimension() < 3 && i < num_points))
         {
           Locate_type lt;
           Cell_handle c;
@@ -425,7 +426,8 @@ namespace CGAL {
     template<class Construct_bare_point, class Container>
     struct Index_to_Bare_point
     {
-      const Bare_point& operator()(const std::size_t& i) const
+      typename boost::result_of<const Construct_bare_point(const Weighted_point&)>::type
+      operator()(const std::size_t& i) const
       {
         return cp(c[i]);
       }
@@ -483,7 +485,7 @@ namespace CGAL {
         // Insert "num_points_seq" points sequentially
         // (or more if dim < 3 after that)
         size_t num_points_seq = (std::min)(num_points, (size_t)100);
-        while (dimension() < 3 || i < num_points_seq)
+        while (i < num_points_seq || (dimension() < 3 && i < num_points))
         {
           Locate_type lt;
           Cell_handle c;
@@ -825,10 +827,6 @@ namespace CGAL {
 
       CGAL_triangulation_expensive_postcondition(is_valid());
     }
-
-
-    // DISPLACEMENT
-    Vertex_handle move_point(Vertex_handle v, const Weighted_point & p);
 
     // Displacement works only for regular triangulation
     // without hidden points at any time
@@ -2180,8 +2178,16 @@ namespace CGAL {
     Regular_triangulation_3<Gt,Tds,Lds>::
     is_Gabriel(Vertex_handle v) const
   {
-    return nearest_power_vertex(
-             geom_traits().construct_point_3_object()(v->point()), v->cell()) == v;
+    typename Geom_traits::Power_side_of_bounded_power_sphere_3
+      side_of_bounded_orthogonal_sphere =
+      geom_traits().power_side_of_bounded_power_sphere_3_object();
+
+    Vertex_handle nearest_v =
+      nearest_power_vertex(geom_traits().construct_point_3_object()(v->point()),
+                           v->cell());
+
+    return (side_of_bounded_orthogonal_sphere(v->point(), nearest_v->point())
+              != CGAL::ON_BOUNDED_SIDE);
   }
 
   // Returns
@@ -2424,30 +2430,6 @@ namespace CGAL {
     return removed;
   }
 
-  // Again, verbatim copy from Delaunay.
-  template < class Gt, class Tds, class Lds >
-  typename Regular_triangulation_3<Gt,Tds,Lds>::Vertex_handle
-    Regular_triangulation_3<Gt,Tds,Lds>::
-    move_point(Vertex_handle v, const Weighted_point & p)
-  {
-    CGAL_triangulation_precondition(! is_infinite(v));
-    CGAL_triangulation_expensive_precondition(is_vertex(v));
-
-    // Dummy implementation for a start.
-
-    // Remember an incident vertex to restart
-    // the point location after the removal.
-    Cell_handle c = v->cell();
-    Vertex_handle old_neighbor = c->vertex(c->index(v) == 0 ? 1 : 0);
-    CGAL_triangulation_assertion(old_neighbor != v);
-
-    remove(v);
-
-    if (dimension() <= 0)
-      return insert(p);
-    return insert(p, old_neighbor->cell());
-  }
-
   // Displacement works only for regular triangulation
   // without hidden points at any time
   template < class Gt, class Tds, class Lds >
@@ -2566,8 +2548,6 @@ namespace CGAL {
 
 } //namespace CGAL
 
-#if defined(BOOST_MSVC)
-#  pragma warning(pop)
-#endif
+#include <CGAL/enable_warnings.h>
 
 #endif // CGAL_REGULAR_TRIANGULATION_3_H

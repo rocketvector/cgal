@@ -13,6 +13,7 @@
 //
 // $URL$
 // $Id$
+// SPDX-License-Identifier: GPL-3.0+
 //
 // Author(s)     : Fernando Cacciola <fernando.cacciola@geometryfactory.com>
 //
@@ -112,8 +113,10 @@ namespace Surface_mesh_simplification
   Equal_3 equal_points = Traits().equal_3_object();
     
   size_type lSize = num_edges(mSurface);
-  
-  mInitialEdgeCount = mCurrentEdgeCount = lSize;
+
+  mInitialEdgeCount = mCurrentEdgeCount = static_cast<size_type>(
+                      std::distance( boost::begin(edges(mSurface)),
+                                     boost::end(edges(mSurface)) ) );;
   
   mEdgeDataArray.reset( new Edge_data[lSize] ) ;
   

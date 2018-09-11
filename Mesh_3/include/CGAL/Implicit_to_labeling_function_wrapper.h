@@ -14,6 +14,7 @@
 //
 // $URL$
 // $Id$
+// SPDX-License-Identifier: GPL-3.0+
 //
 //
 // Author(s)     : Stéphane Tayeb, Aymeric PELLE
@@ -32,7 +33,7 @@
 
 #include <CGAL/license/Mesh_3.h>
 
-
+#include <CGAL/disable_warnings.h>
 
 #if defined(BOOST_MSVC)
 #  pragma warning(push)
@@ -110,7 +111,13 @@ public:
 
   /// Constructor
   Implicit_vector_to_labeling_function_wrapper(const std::vector<Function_*>& v)
-    : function_vector_(v) {}
+    : function_vector_(v)
+  {
+    if ( v.size() > 8 )
+    {
+      CGAL_error_msg("We support at most 8 functions !");
+    }
+  }
 
   // Default copy constructor and assignment operator are ok
 
@@ -120,18 +127,13 @@ public:
   /// Operator ()
   return_type operator()(const Point_3& p, const bool = true) const
   {
-    int nb_func = function_vector_.size();
-    if ( nb_func > 8 )
-    {
-      CGAL_error_msg("We support at most 8 functions !");
-    }
-
+    const int nb_func = static_cast<int>(function_vector_.size());
     char bits = 0;
     for ( int i = 0 ; i < nb_func ; ++i )
     {
       // Insert value into bits : we compute fi(p) and insert result at
       // bit i of bits
-      bits |= ( ((*function_vector_[i])(p) < 0) << i );
+      bits = char(bits | ( ((*function_vector_[i])(p) < 0) << i ));
     }
 
     return ( static_cast<return_type>(bits) );
@@ -190,7 +192,7 @@ public:
       typename Bmask::size_type bit_index = 0;
       for (std::vector<Sign>::const_iterator iter = mask.begin(), endIter = mask.end(); iter != endIter; ++iter)
       {
-        std::string::value_type character = *iter;
+        std::string::value_type character = static_cast<char>(*iter);
         CGAL_assertion(character == POSITIVE || character == NEGATIVE);
 
         bmask[bit_index] = (character == POSITIVE);
@@ -275,7 +277,7 @@ public:
       ++i;
     }
 
-    std::vector<Bmask>::const_iterator iter = std::lower_bound(bmasks.begin(), bmasks.end(), bmask);
+    typename std::vector<Bmask>::const_iterator iter = std::lower_bound(bmasks.begin(), bmasks.end(), bmask);
     if (iter != bmasks.end() && *iter == bmask)
       return static_cast<return_type>(1 + (iter - bmasks.begin()));
     return 0;
@@ -289,5 +291,7 @@ public:
 #if defined(BOOST_MSVC)
 #  pragma warning(pop)
 #endif
+
+#include <CGAL/enable_warnings.h>
 
 #endif // CGAL_IMPLICIT_TO_LABELING_FUNCTION_WRAPPER_H

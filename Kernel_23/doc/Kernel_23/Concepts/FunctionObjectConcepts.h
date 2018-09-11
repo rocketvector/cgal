@@ -5980,7 +5980,7 @@ public:
   /*!
     returns the point of `t` that is the closest to `p`.
   */
-  Kernel::Point_3 operator()(const Kernel::Triangle_3& h,
+  Kernel::Point_3 operator()(const Kernel::Triangle_3& t,
                              const Kernel::Point_3& p);
 
   /// @}
@@ -7923,6 +7923,14 @@ public:
   bool operator()(const Kernel::Iso_cuboid_3&c, 
                   const Kernel::Point_3&p); 
 
+  /*!
+    returns true iff the line segment `ab` is inside the union of the
+    bounded sides of `s1` and `s2`.
+  */
+  bool operator()(const Kernel::Sphere_3& s1,
+                  const Kernel::Sphere_3& s2,
+                  const Kernel::Point_3& a,
+                  const Kernel::Point_3& b);
 
   /// @}
 

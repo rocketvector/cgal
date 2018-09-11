@@ -14,6 +14,7 @@
 //
 // $URL$
 // $Id$
+// SPDX-License-Identifier: GPL-3.0+
 // 
 //
 // Author(s)     : Susan Hert <hert@mpi-sb.mpg.de>
@@ -24,6 +25,8 @@
 #define CGAL_CONVEX_HULL_3_H
 
 #include <CGAL/license/Convex_hull_3.h>
+
+#include <CGAL/disable_warnings.h>
 
 #include <CGAL/basic.h>
 #include <CGAL/algorithm.h> 
@@ -50,7 +53,7 @@
 #include <CGAL/internal/Exact_type_selector.h>
 #include <CGAL/boost/graph/copy_face_graph.h>
 #include <CGAL/boost/graph/graph_traits_Triangulation_data_structure_2.h>
-#include <CGAL/boost/graph/graph_traits_Polyhedron_3.h>
+#include <CGAL/Polyhedron_3_fwd.h>
 #include <CGAL/boost/graph/Euler_operations.h>
 
 #include <boost/unordered_map.hpp>
@@ -62,6 +65,7 @@
 
 namespace CGAL {
 
+  
 namespace internal{  namespace Convex_hull_3{
 
 //struct to select the default traits class for computing convex hull
@@ -315,13 +319,26 @@ void coplanar_3_hull(InputIterator first, InputIterator beyond,
 
   typename boost::property_map<Polyhedron_3, CGAL::vertex_point_t>::type vpm
     = get(CGAL::vertex_point, P);
-  std::vector<typename boost::graph_traits<Polyhedron_3>::vertex_descriptor> vertices;
+  typedef boost::graph_traits<Polyhedron_3> Graph_traits;
+  typedef typename Graph_traits::vertex_descriptor vertex_descriptor;
+  typedef typename Graph_traits::halfedge_descriptor halfedge_descriptor;
+  typedef typename Graph_traits::face_descriptor face_descriptor;
+  std::vector<vertex_descriptor> vertices;
   vertices.reserve(CH_2.size());
   BOOST_FOREACH(const Point_3& p, CH_2){
     vertices.push_back(add_vertex(P));
     put(vpm, vertices.back(),p);
   }
-  Euler::add_face(vertices, P);
+  face_descriptor f = Euler::add_face(vertices, P);
+
+  // Then triangulate that face
+  const halfedge_descriptor he = halfedge(f, P);
+  halfedge_descriptor other_he = next(next(he, P), P);
+  for(std::size_t i = 3, end = vertices.size(); i < end; ++i) {
+    const halfedge_descriptor next_he = next(other_he, P);
+    Euler::split_face(other_he, he, P);
+    other_he = next_he;
+  }
 }
 
 
@@ -892,5 +909,7 @@ void convex_hull_3(InputIterator first, InputIterator beyond,
 }
 
 } // namespace CGAL
+
+#include <CGAL/enable_warnings.h>
 
 #endif // CGAL_CONVEX_HULL_3_H

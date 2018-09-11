@@ -379,7 +379,7 @@ protected:
   void change_poly_item_by_blocking(Scene_face_graph_item* poly_item, Scene_hole_visualizer* collection) {
     if(collection) collection->block_poly_item_changed = true;
     poly_item->invalidateOpenGLBuffers();
-    scene->itemChanged(poly_item);
+    poly_item->redraw();
     if(collection) collection->block_poly_item_changed = false;
   }
 private:
@@ -435,11 +435,23 @@ void Polyhedron_demo_hole_filling_plugin::init(QMainWindow* mainWindow,
   scene = scene_interface;
   messages = m;
 
-  actionHoleFilling = new QAction(tr("Hole Filling"), mw);
+  actionHoleFilling = new QAction(tr(
+                                  #ifdef USE_SURFACE_MESH
+                                      "Hole Filling for Surface Mesh"
+                                  #else
+                                      "Hole Filling for Polyhedron"
+                                  #endif
+                                    ), mw);
   actionHoleFilling->setProperty("subMenuName", "Polygon Mesh Processing");
   connect(actionHoleFilling, SIGNAL(triggered()), this, SLOT(hole_filling_action()));
 
-  dock_widget = new QDockWidget("Hole Filling", mw);
+  dock_widget = new QDockWidget(
+      #ifdef USE_SURFACE_MESH
+          "Hole Filling for Surface Mesh"
+      #else
+          "Hole Filling for Polyhedron"
+      #endif
+        , mw);
   dock_widget->setVisible(false);
   dock_widget->installEventFilter(this);
 
@@ -448,6 +460,13 @@ void Polyhedron_demo_hole_filling_plugin::init(QMainWindow* mainWindow,
   ui_widget.Reject_button->setVisible(false);
 
   addDockWidget(dock_widget);
+  dock_widget->setWindowTitle(tr(
+                              #ifdef USE_SURFACE_MESH
+                                  "Hole Filling for Surface Mesh"
+                              #else
+                                  "Hole Filling for Polyhedron"
+                              #endif
+                                ));
   
   connect(ui_widget.Fill_from_selection_button,  SIGNAL(clicked()), this, SLOT(on_Fill_from_selection_button()));
   connect(ui_widget.Visualize_holes_button,  SIGNAL(clicked()), this, SLOT(on_Visualize_holes_button()));
@@ -628,7 +647,7 @@ void Polyhedron_demo_hole_filling_plugin::on_Reject_button() {
   if(last_active_item == NULL) { return; }
 
   accept_reject_toggle(false);
-  FaceGraph graph = *(last_active_item->polyhedron());
+  FaceGraph& graph = *(last_active_item->polyhedron());
   for(std::vector<fg_face_descriptor>::iterator it = new_facets.begin(); it != new_facets.end(); ++it) {
     CGAL::Euler::remove_face(halfedge(*it, graph), graph);
   }

@@ -249,11 +249,25 @@ void
 Scene_polygon_soup_item_priv::triangulate_polygon(Polygons_iterator pit, int polygon_id) const
 {
     //Computes the normal of the facet
-    const Point_3& pa = soup->points[pit->at(0)];
-    const Point_3& pb = soup->points[pit->at(1)];
-    const Point_3& pc = soup->points[pit->at(2)];
-    Traits::Vector_3 normal = CGAL::cross_product(pb-pa, pc -pa);
-    normal = normal / std::sqrt(normal * normal);
+    Traits::Vector_3 normal = CGAL::NULL_VECTOR;
+
+    // The three first vertices may be aligned, we need to test other
+    // combinations
+    for (std::size_t i = 0; i < pit->size() - 2; ++ i)
+    {
+       const Point_3& pa = soup->points[pit->at(i)];
+       const Point_3& pb = soup->points[pit->at(i+1)];
+       const Point_3& pc = soup->points[pit->at(i+2)];
+       if (!CGAL::collinear (pa, pb, pc))
+       {
+          normal = CGAL::cross_product(pb-pa, pc -pa);
+          break;
+       }
+    }
+
+    if (normal == CGAL::NULL_VECTOR) // No normal could be computed, return
+      return;
+
     typedef FacetTriangulator<Polyhedron, Kernel, std::size_t> FT;
 
     double diagonal;
@@ -683,8 +697,10 @@ Scene_polygon_soup_item::exportAsSurfaceMesh(SMesh *out_surface_mesh)
   CGAL::Polygon_mesh_processing::polygon_soup_to_polygon_mesh< CGAL::Surface_mesh<Point_3> >(
     d->soup->points, d->soup->polygons, *out_surface_mesh);
   std::size_t rv = CGAL::Polygon_mesh_processing::remove_isolated_vertices(*out_surface_mesh);
-  if(rv > 0)
+  if(rv > 0){
     std::cerr << "Ignore isolated vertices: " << rv << std::endl;
+    out_surface_mesh->collect_garbage();
+  }
   if(out_surface_mesh->vertices().size() > 0) {
     return true;
   }
@@ -873,18 +889,37 @@ void Scene_polygon_soup_item::load(const std::vector<Point>& points, const std::
     d->oriented = false;
     invalidateOpenGLBuffers();
 }
+
+template <class Point, class Polygon>
+void Scene_polygon_soup_item::load(const std::vector<Point>& points, const std::vector<Polygon>& polygons,
+                                   const std::vector<CGAL::Color>& fcolors,
+                                   const std::vector<CGAL::Color>& vcolors)
+{
+    load (points, polygons);
+
+    d->soup->fcolors.reserve (fcolors.size());
+    std::copy (fcolors.begin(), fcolors.end(), std::back_inserter (d->soup->fcolors));
+    
+    d->soup->vcolors.reserve (vcolors.size());
+    std::copy (vcolors.begin(), vcolors.end(), std::back_inserter (d->soup->vcolors));
+}
 // Force the instanciation of the template function for the types used in the STL_io_plugin. This is needed
 // because the d-pointer forbid the definition in the .h for this function.
 template SCENE_POLYGON_SOUP_ITEM_EXPORT void Scene_polygon_soup_item::load<CGAL::cpp11::array<double, 3>, CGAL::cpp11::array<int, 3> >
 (const std::vector<CGAL::cpp11::array<double, 3> >& points, const std::vector<CGAL::cpp11::array<int, 3> >& polygons);
 template SCENE_POLYGON_SOUP_ITEM_EXPORT void Scene_polygon_soup_item::load<CGAL::Epick::Point_3, std::vector<std::size_t> >
 (const std::vector<CGAL::Epick::Point_3>& points, const std::vector<std::vector<std::size_t> >& polygons);
+template SCENE_POLYGON_SOUP_ITEM_EXPORT void Scene_polygon_soup_item::load<CGAL::Epick::Point_3, std::vector<std::size_t> >
+(const std::vector<CGAL::Epick::Point_3>& points, const std::vector<std::vector<std::size_t> >& polygons,
+ const std::vector<CGAL::Color>& fcolors,
+ const std::vector<CGAL::Color>& vcolors);
 
 // Local Variables:
 // c-basic-offset: 4
 // End:
 
 const Scene_polygon_soup_item::Points& Scene_polygon_soup_item::points() const { return d->soup->points; }
+const Scene_polygon_soup_item::Polygons& Scene_polygon_soup_item::polygons() const { return d->soup->polygons; }
 bool Scene_polygon_soup_item::isDataColored() { return d->soup->fcolors.size()>0 || d->soup->vcolors.size()>0;}
 std::vector<CGAL::Color> Scene_polygon_soup_item::getVColors() const{return d->soup->vcolors;}
 std::vector<CGAL::Color> Scene_polygon_soup_item::getFColors() const{return d->soup->fcolors;}
@@ -900,4 +935,10 @@ void Scene_polygon_soup_item::itemAboutToBeDestroyed(Scene_item *item)
       d->soup=NULL;
     }
   }
+}
+
+const Polygon_soup::Edges& 
+Scene_polygon_soup_item::non_manifold_edges() const
+{
+  return d->soup->non_manifold_edges;
 }

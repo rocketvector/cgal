@@ -12,8 +12,9 @@
 // This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
 // WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
-// $URL: $
-// $Id: $
+// $URL$
+// $Id$
+// SPDX-License-Identifier: GPL-3.0+
 //
 // Author(s)     : Clement Jamin
 
@@ -22,6 +23,7 @@
 
 #include <CGAL/license/Mesh_3.h>
 
+#include <CGAL/disable_warnings.h>
 
 #ifdef CGAL_LINKED_WITH_TBB
 
@@ -35,6 +37,7 @@
 #include <tbb/concurrent_vector.h>
 #include <tbb/scalable_allocator.h>
 
+#include <tbb/atomic.h>
 
 #include <vector>
 
@@ -296,6 +299,9 @@ class MeshRefinementWorkItem
 public:
   MeshRefinementWorkItem(const Func& func, const Quality &quality)
     : m_func(func), m_quality(quality)
+  {}
+
+  virtual ~MeshRefinementWorkItem()
   {}
 
   void run()
@@ -719,6 +725,7 @@ public:
         Concurrent_mesher_config::get().num_work_items_per_batch)
   {
     set_bbox(bbox);
+    m_cache_number_of_tasks = 0;
   }
 
   /// Destructor
@@ -745,6 +752,7 @@ public:
       add_batch_and_enqueue_task(workbuffer, parent_task);
       workbuffer.clear();
     }
+    m_cache_number_of_tasks = parent_task.ref_count();
   }
 
   template <typename Func, typename Quality>
@@ -761,6 +769,7 @@ public:
       add_batch_and_enqueue_task(workbuffer, parent_task);
       workbuffer.clear();
     }
+    m_cache_number_of_tasks = parent_task.ref_count();
   }
 
   // Returns true if some items were flushed
@@ -788,7 +797,12 @@ public:
       enqueue_task(*it, parent_task);
     }
 
+    m_cache_number_of_tasks = parent_task.ref_count();
     return (num_flushed_items > 0);
+  }
+
+  int approximate_number_of_enqueued_element() const {
+    return int(m_cache_number_of_tasks) * int(NUM_WORK_ITEMS_PER_BATCH);
   }
 
 protected:
@@ -815,6 +829,7 @@ protected:
   }
 
   const size_t                      NUM_WORK_ITEMS_PER_BATCH;
+  tbb::atomic<int>                  m_cache_number_of_tasks;
   TLS_WorkBuffer                    m_tls_work_buffers;
 };
 
@@ -848,5 +863,7 @@ namespace CGAL { namespace Mesh_3 {
 } } //namespace CGAL::Mesh_3
 
 #endif // CGAL_LINKED_WITH_TBB
+
+#include <CGAL/enable_warnings.h>
 
 #endif // CGAL_MESH_3_WORKSHARING_DATA_STRUCTURES_H

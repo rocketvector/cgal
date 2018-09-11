@@ -14,6 +14,7 @@
 //
 // $URL$
 // $Id$
+// SPDX-License-Identifier: GPL-3.0+
 //
 //
 // Author(s)     : Monique Teillaud <Monique.Teillaud@sophia.inria.fr>
@@ -26,6 +27,8 @@
 
 #include <CGAL/license/Triangulation_3.h>
 
+
+#include <CGAL/disable_warnings.h>
 
 #include <CGAL/basic.h>
 
@@ -136,6 +139,11 @@ public:
   typedef typename Tr_Base::size_type size_type;
   typedef typename Tr_Base::Locate_type Locate_type;
 
+  //Tag to distinguish Delaunay from regular triangulations
+  typedef Tag_false                          Weighted_tag;
+
+  // Tag to distinguish periodic triangulations from others
+  typedef Tag_false                          Periodic_tag;
 
 #ifndef CGAL_CFG_USING_BASE_MEMBER_BUG_2
   using Tr_Base::cw;
@@ -381,7 +389,7 @@ public:
       // Insert "num_points_seq" points sequentially
       // (or more if dim < 3 after that)
       size_t num_points_seq = (std::min)(num_points, (size_t)100);
-      while (dimension() < 3 || i < num_points_seq)
+      while (i < num_points_seq || (dimension() < 3 && i < num_points))
       {
         hint = insert(points[i], hint);
         ++i;
@@ -464,7 +472,7 @@ private:
         // Insert "num_points_seq" points sequentially
         // (or more if dim < 3 after that)
         size_t num_points_seq = (std::min)(num_points, (size_t)100);
-        while (dimension() < 3 || i < num_points_seq)
+        while (i < num_points_seq || (dimension() < 3 && i < num_points))
         {
           hint = insert(points[indices[i]], hint);
           if (hint != Vertex_handle()) hint->info() = infos[indices[i]];
@@ -563,11 +571,6 @@ public: // internal methods
                                           OutputItCells fit);
 
 public:
-
-#ifndef CGAL_NO_DEPRECATED_CODE
-  CGAL_DEPRECATED Vertex_handle move_point(Vertex_handle v, const Point & p);
-#endif
-
   template <class OutputIteratorBoundaryFacets,
             class OutputIteratorCells,
             class OutputIteratorInternalFacets>
@@ -1269,31 +1272,6 @@ insert_and_give_new_cells(const Point& p,
   else *fit++ = v->cell(); // dimension = 0
   return v;
 }
-
-#ifndef CGAL_NO_DEPRECATED_CODE
-template < class Gt, class Tds, class Lds >
-typename Delaunay_triangulation_3<Gt,Tds,Default,Lds>::Vertex_handle
-Delaunay_triangulation_3<Gt,Tds,Default,Lds>::
-move_point(Vertex_handle v, const Point & p)
-{
-    CGAL_triangulation_precondition(! is_infinite(v));
-    CGAL_triangulation_expensive_precondition(is_vertex(v));
-
-    // Dummy implementation for a start.
-
-    // Remember an incident vertex to restart
-    // the point location after the removal.
-    Cell_handle c = v->cell();
-    Vertex_handle old_neighbor = c->vertex(c->index(v) == 0 ? 1 : 0);
-    CGAL_triangulation_assertion(old_neighbor != v);
-
-    remove(v);
-
-    if (dimension() <= 0)
-        return insert(p);
-    return insert(p, old_neighbor->cell());
-}
-#endif
 
 template <class Gt, class Tds, class Lds >
 template <class DelaunayTriangulation_3>
@@ -2069,5 +2047,7 @@ is_valid(Cell_handle c, bool verbose, int level) const
 } //namespace CGAL
 
 #include <CGAL/internal/Delaunay_triangulation_hierarchy_3.h>
+
+#include <CGAL/enable_warnings.h>
 
 #endif // CGAL_DELAUNAY_TRIANGULATION_3_H

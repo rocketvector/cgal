@@ -201,6 +201,8 @@ private:
         {
           delete new_poly;
           messages->warning(tr("The result of the requested operation is not manifold and has not been computed."));
+          // default cursor
+          QApplication::restoreOverrideCursor();
           return;
         }
         str_op = "Union";
@@ -211,18 +213,23 @@ private:
         {
           delete new_poly;
           messages->warning(tr("The result of the requested operation is not manifold and has not been computed."));
+          // default cursor
+          QApplication::restoreOverrideCursor();
           return;
         }
         str_op = "Intersection";
       break;
       case CRF_MINUS_OP:
         std::swap(first_item, item);
+	CGAL_FALLTHROUGH;
       case CRF_MINUS:
         P = *first_item->polyhedron(), Q = *item->polyhedron();
         if (! PMP::corefine_and_compute_difference(P, Q, *new_poly) )
         {
           delete new_poly;
           messages->warning(tr("The result of the requested operation is not manifold and has not been computed."));
+          // default cursor
+          QApplication::restoreOverrideCursor();
           return;
         }
         str_op = "Difference";
