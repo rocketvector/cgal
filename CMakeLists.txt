@@ -7,7 +7,7 @@ cmake_minimum_required(VERSION 3.1)
 
 set( CGAL_BRANCH_BUILD ON CACHE INTERNAL "Create CGAL from a Git branch" FORCE)
 
-include(${CMAKE_SOURCE_DIR}/Installation/cmake/modules/CGAL_SCM.cmake)
+include(${CMAKE_CURRENT_LIST_DIR}/Installation/cmake/modules/CGAL_SCM.cmake)
 CGAL_detect_git(${CMAKE_SOURCE_DIR})
 
 function(CGAL_error_if_detect_in_source_build)
