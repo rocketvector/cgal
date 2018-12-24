@@ -47,12 +47,16 @@
 #include <boost/next_prior.hpp> // for boost::prior and boost::next
 #include <boost/variant.hpp>
 #include <boost/foreach.hpp>
+#include <boost/type_traits/is_same.hpp>
+#include <boost/utility/enable_if.hpp>
+#include <boost/shared_ptr.hpp>
+#include <boost/make_shared.hpp>
 
 namespace CGAL {
 
 /// @cond DEVELOPERS
-namespace internal {
 namespace Mesh_3 {
+namespace internal {
 
 template <typename Kernel>
 class Polyline
@@ -508,8 +512,8 @@ struct Display_incidences_to_curves_aux<MDwPF, false> {
                   const Container&) const;
 };
 
-} // end of namespace CGAL::internal::Mesh_3
-} // end of namespace CGAL::internal
+} // end of namespace CGAL::Mesh_3::internal
+} // end of namespace CGAL::Mesh_3
 /// @endcond
 
 /*!
@@ -538,6 +542,7 @@ template < typename MeshDomain_3 >
 class Mesh_domain_with_polyline_features_3
   : public MeshDomain_3
 {
+  typedef Mesh_domain_with_polyline_features_3<MeshDomain_3> Self;
 public:
 /// \name Types
 /// @{
@@ -563,24 +568,11 @@ public:
   typedef typename MeshDomain_3::Point_3   Point_3;
 #endif // DOXYGEN_RUNNING
 
-#ifndef CGAL_CFG_NO_CPP0X_VARIADIC_TEMPLATES
 /// \name Creation
+/// Constructors. Forwards the arguments to the constructor
+/// of the base class.
 /// @{
 
-/*!
-Constructor. Forwards the arguments to the constructor
-of the base class.
-*/
-  template <typename ... T>
-  Mesh_domain_with_polyline_features_3(const T& ...t)
-    : MeshDomain_3(t...)
-    , current_corner_index_(1)
-    , current_curve_index_(1)
-    , curves_aabb_tree_is_built(false) {}
-/// @}
-#else
-  /// Constructors
-  /// Call the base class constructor
   Mesh_domain_with_polyline_features_3()
     : MeshDomain_3()
     , current_corner_index_(1)
@@ -588,12 +580,25 @@ of the base class.
     , curves_aabb_tree_is_built(false) {}
 
   template <typename T1>
-  Mesh_domain_with_polyline_features_3(const T1& o1)
+  Mesh_domain_with_polyline_features_3
+  (const T1& o1, typename boost::disable_if<boost::is_same<T1,Self>,
+                                            CGAL::Tag_false>::type* = 0)
     : MeshDomain_3(o1)
     , current_corner_index_(1)
     , current_curve_index_(1)
     , curves_aabb_tree_is_built(false) {}
 
+#ifndef CGAL_CFG_NO_CPP0X_VARIADIC_TEMPLATES
+  template <typename T1, typename T2, typename ... T>
+  Mesh_domain_with_polyline_features_3(const T1& o1, const T2& o2, const T& ...o)
+    : MeshDomain_3(o1, o2, o...)
+    , current_corner_index_(1)
+    , current_curve_index_(1)
+    , curves_aabb_tree_is_built(false) {}
+/// @}
+#else
+  /// Constructors
+  /// Call the base class constructor
   template <typename T1, typename T2>
   Mesh_domain_with_polyline_features_3(const T1& o1, const T2& o2)
     : MeshDomain_3(o1, o2)
@@ -839,13 +844,13 @@ private:
 private:
   typedef std::map<Point_3,Corner_index> Corners;
 
-  typedef internal::Mesh_3::Polyline<Gt> Polyline;
+  typedef Mesh_3::internal::Polyline<Gt> Polyline;
   typedef std::map<Curve_index, Polyline> Edges;
   typedef std::map<Curve_index, Surface_patch_index_set > Edges_incidences;
   typedef std::map<Corner_index, std::set<Curve_index> > Corners_tmp_incidences;
   typedef std::map<Corner_index, Surface_patch_index_set > Corners_incidences;
 
-  typedef internal::Mesh_3::Mesh_domain_segment_of_curve_primitive<
+  typedef Mesh_3::internal::Mesh_domain_segment_of_curve_primitive<
     Gt,
     typename Edges::const_iterator> Curves_primitives;
 
@@ -866,7 +871,7 @@ public:
   typedef CGAL::AABB_tree<AABB_curves_traits> Curves_AABB_tree;
 
 private:
-  mutable Curves_AABB_tree curves_aabb_tree_;
+  mutable boost::shared_ptr<Curves_AABB_tree> curves_aabb_tree_ptr_;
   mutable bool curves_aabb_tree_is_built;
 
 public:
@@ -875,7 +880,7 @@ public:
 
   const Curves_AABB_tree& curves_aabb_tree() const {
     if(!curves_aabb_tree_is_built) build_curves_aabb_tree();
-    return curves_aabb_tree_;
+    return *curves_aabb_tree_ptr_;
   }
   Curve_index maximal_curve_index() const {
     if(edges_incidences_.empty()) return Curve_index();
@@ -888,7 +893,11 @@ public:
     CGAL::Real_timer timer;
     timer.start();
 #endif
-    curves_aabb_tree_.clear();
+    if(curves_aabb_tree_ptr_) {
+      curves_aabb_tree_ptr_->clear();
+    } else {
+      curves_aabb_tree_ptr_ = boost::make_shared<Curves_AABB_tree>();
+    }
     for(typename Edges::const_iterator
           edges_it = edges_.begin(),
           edges_end = edges_.end();
@@ -900,10 +909,10 @@ public:
             end = polyline.points_.end() - 1;
           pit != end; ++pit)
       {
-        curves_aabb_tree_.insert(std::make_pair(edges_it, pit));
+        curves_aabb_tree_ptr_->insert(std::make_pair(edges_it, pit));
       }
     }
-    curves_aabb_tree_.build();
+    curves_aabb_tree_ptr_->build();
     curves_aabb_tree_is_built = true;
 #if CGAL_MESH_3_VERBOSE
     timer.stop();
@@ -911,12 +920,6 @@ public:
 #endif
   } // end build_curves_aabb_tree()
   /// @endcond
-private:
-  // Disabled copy constructor & assignment operator
-  typedef Mesh_domain_with_polyline_features_3 Self;
-  Mesh_domain_with_polyline_features_3(const Self& src);
-  Self& operator=(const Self& src);
-
 };  // end class Mesh_domain_with_polyline_features_3
 
 
@@ -1282,7 +1285,8 @@ get_corner_incident_curves(Corner_index id,
 /// @endcond
 
 /// @cond DEVELOPERS
-namespace internal { namespace Mesh_3 {
+namespace Mesh_3 {
+namespace internal {
 
 template <typename MDwPF_, bool curve_id_is_streamable>
 // here 'curve_id_is_streamable' is true
@@ -1347,7 +1351,8 @@ operator()(std::ostream& os, Point p, typename MDwPF_::Curve_index id,
      << " surface patch(es).\n";
 }
 
-}} // end namespaces internal::Mesh_3:: and internal::
+} // end namespace Mesh_3::internal
+} // end namespace Mesh_3
 /// @endcond
 
 /// @cond DEVELOPERS
@@ -1360,9 +1365,8 @@ display_corner_incidences(std::ostream& os, Point_3 p, Corner_index id)
   typedef is_streamable<Surface_patch_index> i_s_spi;
   typedef is_streamable<Curve_index> i_s_csi;
 
-  using namespace internal::Mesh_3;
-  typedef Display_incidences_to_curves_aux<Mdwpf,i_s_csi::value> D_i_t_c;
-  typedef Display_incidences_to_patches_aux<Mdwpf,i_s_spi::value> D_i_t_p;
+  typedef Mesh_3::internal::Display_incidences_to_curves_aux<Mdwpf,i_s_csi::value> D_i_t_c;
+  typedef Mesh_3::internal::Display_incidences_to_patches_aux<Mdwpf,i_s_spi::value> D_i_t_p;
   D_i_t_c()(os, p, id, corners_tmp_incidences_[id]);
   D_i_t_p()(os, p, id, corners_incidences_[id]);
 }

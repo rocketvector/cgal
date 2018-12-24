@@ -159,7 +159,7 @@ In order to build the \cgal libraries, you need a \cpp compiler.
 | :------- | :--------------- |
 |\sc{Gnu} `g++` 4.1 or later\cgalFootnote{<A HREF="http://gcc.gnu.org/">`http://gcc.gnu.org/`</A>} | Linux / MacOS X |
 |          | \sc{MS} Windows | 
-|\sc{MS} Visual `C++` 12.0, 14.0, 15.0 (\sc{Visual Studio} 2013, 2015, and 2017)\cgalFootnote{<A HREF="http://msdn.microsoft.com/en-us/vstudio/">`http://msdn.microsoft.com/en-us/vstudio/`</A>} | \sc{MS} Windows |
+|\sc{MS} Visual `C++` 12.0, 14.0, 15.7 (\sc{Visual Studio} 2013, 2015, and 2017)\cgalFootnote{<A HREF="http://msdn.microsoft.com/en-us/vstudio/">`http://msdn.microsoft.com/en-us/vstudio/`</A>} | \sc{MS} Windows |
 | `Clang` \cgalFootnote{<A HREF="http://clang.llvm.org/">`http://clang.llvm.org/`</A>} compiler version 6.0.0 | Linux  |
 | Apple `Clang` compiler version 7.0.2 | MacOS X |
 
@@ -551,14 +551,6 @@ and the \ref PkgRidges_3 packages.
 
 The \sc{Eigen} web site is <A HREF="http://eigen.tuxfamily.org">`http://eigen.tuxfamily.org`</A>.
 
-\subsection thirdpartylibQGLViewer libQGLViewer 
-
-libQGLViewer is a 3D widget based on \sc{Qt} 4's `QGLWidget`. In case of \sc{Qt}5 used, libQGLViewer needs to be recompiled with the proper \sc{Qt}5 version.
-
-In \cgal some 3D demos are based on libQGLViewer.
-
-It can be downloaded from <A HREF="http://www.libqglviewer.com/">`http://www.libqglviewer.com/`</A>.
-
 \subsection thirdpartyESBTL ESBTL
 
 The \sc{Esbtl} (Easy Structural Biology Template Library) is a library that allows
@@ -601,6 +593,18 @@ In \cgal, \sc{OpenCV} is used by the \ref PkgClassification package.
 
 The \sc{OpenCV} web site is <A HREF="http://opencv.org/">`http://opencv.org/`</A>.
 
+\subsection thirdpartyMETIS METIS
+
+\sc{METIS} is a library developed by the <A HREF="http://glaros.dtc.umn.edu/gkhome/">Karypis Lab</A>
+and designed to partition graphs and produce fill-reducing matrix orderings.
+
+\cgal offers wrappers around some of the methods of the \sc{METIS} library
+to allow the partitioning of graphs that are models of the concepts of the
+<A HREF="http://www.boost.org/libs/graph/doc/index.html">Boost Graph Library</A>,
+and, by extension, of surface meshes (see Section \ref BGLPartitioning of the package \ref PkgBGLSummary).
+
+More information is available on the METIS library
+at <A HREF="http://glaros.dtc.umn.edu/gkhome/metis/metis/overview">`http://glaros.dtc.umn.edu/gkhome/metis/metis/overview`</A>.
 
 \section secbuilding Building CGAL 
 
@@ -1168,22 +1172,6 @@ Only the <I>directory</I> containing the header files of \sc{Eigen} 3.1 (or grea
 | :-                   | :-                    | :-             |
 | `EIGEN3_INCLUDE_DIR` | Directory containing the file `signature_of_eigen3_matrix_library` | CMake |
 | `EIGEN3_INC_DIR` | Idem | Environment |
-
-\subsection installation_qgl QGLViewer Library
-
-Some demos require the GLViewer library.
-
-In most cases, if QGLViewer is not automatically found, setting the `QGLVIEWERROOT` 
-environment variable is sufficient. If it is not, you can specify the directory containing 
-the header files and the full pathnames of the release and debug libraries
-
-| Variable             | Description           | Type        |
-| :-                   | :-                    | :-             |
-| `QGLVIEWERROOT` | Root directory of the QGLViewer library | Environment |
-| `QGLVIEWER_INCLUDE_DIR` | Directory containing the `QGLViewer/qglviewer.h` file | CMake |
-| `QGLVIEWER_LIBRARY_RELEASE` | Full pathname to a release build of the QGLViewer library | CMake |
-| `QGLVIEWER_LIBRARY_DEBUG` | Full pathname to a debug build of the QGLViewer library | CMake |
-
 
 \subsection installation_esbtl ESBTL Library
 

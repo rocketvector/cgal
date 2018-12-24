@@ -58,11 +58,7 @@
 #endif
 
 #ifdef CGAL_LINKED_WITH_TBB
-#  if TBB_IMPLEMENT_CPP0X
-#   include <tbb/compat/thread>
-#  else
-#   include <thread>
-#  endif
+#  include <tbb/task_scheduler_init.h>
 #endif
 
 #include <boost/format.hpp>
@@ -385,6 +381,10 @@ Mesher_3<C3T3,MC,MD>::Mesher_3(C3T3& c3t3,
   facets_mesher_.set_worksharing_ds(this->get_worksharing_data_structure());
   cells_mesher_.set_lock_ds(this->get_lock_data_structure());
   cells_mesher_.set_worksharing_ds(this->get_worksharing_data_structure());
+#ifndef CGAL_NO_ATOMIC
+  cells_mesher_.set_stop_pointer(stop_ptr);
+  facets_mesher_.set_stop_pointer(stop_ptr);
+#endif
 }
 
 
@@ -530,6 +530,8 @@ refine_mesh(std::string dump_after_refine_surface_prefix)
   std::cerr << "Total refining surface time: " << timer.time() << "s" << std::endl;
   std::cerr << std::endl;
 
+  CGAL_triangulation_postcondition(r_tr.is_valid());
+
   elapsed_time += timer.time();
   timer.stop(); timer.reset(); timer.start();
   nbsteps = 0;
@@ -568,6 +570,8 @@ refine_mesh(std::string dump_after_refine_surface_prefix)
   std::cerr << "Total refining volume time: " << timer.time() << "s" << std::endl;
   std::cerr << "Total refining time: " << timer.time()+elapsed_time << "s" << std::endl;
   std::cerr << std::endl;
+
+  CGAL_triangulation_postcondition(r_tr.is_valid());
 #endif
 
   (void)(forced_stop()); // sets *error_code
@@ -651,7 +655,7 @@ initialize()
       for (int i = 0 ; i < NUM_PSEUDO_INFINITE_VERTICES ; ++i, ++random_point)
         r_c3t3_.add_far_point(r_c3t3_.triangulation().geom_traits().construct_weighted_point_3_object()
                               (r_c3t3_.triangulation().geom_traits().construct_translated_point_3_object()(*random_point, center)));
-    
+
 #  ifdef CGAL_CONCURRENT_MESH_3_VERBOSE
       std::cerr << "done." << std::endl;
 #  endif
@@ -749,6 +753,10 @@ one_step()
 
     if ( facets_mesher_.is_algorithm_done() )
     {
+      if(forced_stop()) {
+        return;
+      }
+
       switch(refinement_stage) {
       case REFINE_FACETS:
         facets_mesher_.scan_edges();

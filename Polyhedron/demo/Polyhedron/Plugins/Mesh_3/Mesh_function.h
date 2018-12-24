@@ -218,12 +218,14 @@ initialize(const Mesh_criteria& criteria, Mesh_fnt::Labeled_image_domain_tag)
 // for a labeled image
 {
   if(p_.detect_connected_components) {
-    initialize_triangulation_from_labeled_image(c3t3_
-                                                , *domain_
-                                                , *p_.image_3_ptr
-                                                , criteria
-                                                , typename D_::Image_word_type()
-                                                , p_.protect_features);
+    CGAL_IMAGE_IO_CASE(p_.image_3_ptr->image(),
+            initialize_triangulation_from_labeled_image(c3t3_
+                                                        , *domain_
+                                                        , *p_.image_3_ptr
+                                                        , criteria
+                                                        , Word()
+                                                        , p_.protect_features);
+                       );
   } else {
     initialize(criteria, Mesh_fnt::Domain_tag());
   }
@@ -239,11 +241,11 @@ initialize(const Mesh_criteria& criteria, Mesh_fnt::Domain_tag)
   // features, or with the initial points (or both).
   // If `detect_connected_components==true`, the initialization is
   // already done.
-  CGAL::internal::Mesh_3::C3t3_initializer<
+  CGAL::Mesh_3::internal::C3t3_initializer<
     C3t3,
     Domain,
     Mesh_criteria,
-    CGAL::internal::Mesh_3::has_Has_features<Domain>::value >()
+    CGAL::Mesh_3::internal::has_Has_features<Domain>::value >()
     (c3t3_,
      *domain_,
      criteria,
