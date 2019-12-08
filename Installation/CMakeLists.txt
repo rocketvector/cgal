@@ -1,20 +1,16 @@
 # Top level CMakeLists.txt for CGAL
 # The name of our project is "CGAL".  CMakeLists files in this project can
-# refer to the root source directory of the project as ${PROJECT_SOURCE_DIR} or
-# ${PROJECT_SOURCE_DIR} and to the root binary directory of the project as
+# refer to the root source directory of the project as ${CMAKE_SOURCE_DIR} or
+# ${CMAKE_SOURCE_DIR} and to the root binary directory of the project as
 # ${CMAKE_BINARY_DIR} or ${CMAKE_BINARY_DIR}.
 if(NOT PROJECT_NAME)
+  cmake_minimum_required(VERSION 3.1...3.15)
   project(CGAL CXX C)
 endif()
 
-# Minimal version of CMake:
-cmake_minimum_required(VERSION 3.1)
-
-# Tested version:
-cmake_policy(VERSION 3.1)
 
 if(POLICY CMP0056)
-  # http://www.cmake.org/cmake/help/v3.2/policy/CMP0056.html
+  # https://cmake.org/cmake/help/v3.2/policy/CMP0056.html
   #
   # Fix a bug: `try_compile` should use `CMAKE_EXE_LINKER_FLAGS`.
   # That variable can contain important flags like
@@ -32,7 +28,7 @@ include(GNUInstallDirs)
 #                                    -= HEADER ONLY =-
 #
 #--------------------------------------------------------------------------------------------------
-option(CGAL_HEADER_ONLY "Enable header-only mode of CGAL (no compilation of CGAL libraries)" FALSE)
+option(CGAL_HEADER_ONLY "Enable header-only mode of CGAL (no compilation of CGAL libraries)" TRUE)
 
 #--------------------------------------------------------------------------------------------------
 #
@@ -47,21 +43,21 @@ if ( CGAL_BRANCH_BUILD )
   message( STATUS "Build CGAL from ${CGAL_SCM_NAME}-branch: ${CGAL_SCM_BRANCH_NAME}" )
 
   # list packages
-  file(GLOB CGAL_CONFIGURED_PACKAGES RELATIVE ${PROJECT_SOURCE_DIR} "${PROJECT_SOURCE_DIR}/*")
+  file(GLOB CGAL_CONFIGURED_PACKAGES RELATIVE ${CMAKE_SOURCE_DIR} "${CMAKE_SOURCE_DIR}/*")
   list(SORT CGAL_CONFIGURED_PACKAGES)
   list(REMOVE_ITEM CGAL_CONFIGURED_PACKAGES copyright CMakeLists.txt .svn .git)
 
   # detect and remove not existing package-directories
   foreach (package ${CGAL_CONFIGURED_PACKAGES})
-    if (NOT IS_DIRECTORY "${PROJECT_SOURCE_DIR}/${package}")
+    if (NOT IS_DIRECTORY "${CMAKE_SOURCE_DIR}/${package}")
       list(APPEND CGAL_WRONG_PACKAGES ${package})
-    elseif(NOT EXISTS "${PROJECT_SOURCE_DIR}/${package}/package_info/${package}/maintainer")
+    elseif(NOT EXISTS "${CMAKE_SOURCE_DIR}/${package}/package_info/${package}/maintainer")
       list(APPEND CGAL_WRONG_PACKAGES ${package})
     endif()
   endforeach()
 
   find_program(CGAL_CREATE_CMAKE_SCRIPT cgal_create_cmake_script
-               HINT ${PROJECT_SOURCE_DIR}/Scripts/scripts
+               HINT ${CMAKE_SOURCE_DIR}/Scripts/scripts
 	       DOC "Script cgal_create_cmake_script, that creates CMakeLists.txt files"
 	       NO_DEFAULT_PATH
 	       NO_CMAKE_ENVIRONMENT_PATH)
@@ -74,14 +70,14 @@ if ( CGAL_BRANCH_BUILD )
   set(CGAL_CONFIGURED_PACKAGES_NAMES ${CGAL_CONFIGURED_PACKAGES})
   set(CGAL_CONFIGURED_PACKAGES)
   foreach (package ${CGAL_CONFIGURED_PACKAGES_NAMES})
-    list(APPEND CGAL_CONFIGURED_PACKAGES "${PROJECT_SOURCE_DIR}/${package}")
+    list(APPEND CGAL_CONFIGURED_PACKAGES "${CMAKE_SOURCE_DIR}/${package}")
   endforeach()
 
 
-  set(CGAL_INSTALLATION_PACKAGE_DIR "${PROJECT_SOURCE_DIR}/Installation" CACHE INTERNAL "Directory containing the Installation package")
-  set(CGAL_MAINTENANCE_PACKAGE_DIR "${PROJECT_SOURCE_DIR}/Maintenance" CACHE INTERNAL "Directory containing the Maintenance package")
-  set(CGAL_CORE_PACKAGE_DIR "${PROJECT_SOURCE_DIR}/Core" CACHE INTERNAL "Directory containing the Core package")
-  set(CGAL_GRAPHICSVIEW_PACKAGE_DIR "${PROJECT_SOURCE_DIR}/GraphicsView" CACHE INTERNAL "Directory containing the GraphicsView package")
+  set(CGAL_INSTALLATION_PACKAGE_DIR "${CMAKE_SOURCE_DIR}/Installation" CACHE INTERNAL "Directory containing the Installation package")
+  set(CGAL_MAINTENANCE_PACKAGE_DIR "${CMAKE_SOURCE_DIR}/Maintenance" CACHE INTERNAL "Directory containing the Maintenance package")
+  set(CGAL_CORE_PACKAGE_DIR "${CMAKE_SOURCE_DIR}/Core" CACHE INTERNAL "Directory containing the Core package")
+  set(CGAL_GRAPHICSVIEW_PACKAGE_DIR "${CMAKE_SOURCE_DIR}/GraphicsView" CACHE INTERNAL "Directory containing the GraphicsView package")
 
   message(STATUS "Installation package directory: ${CGAL_INSTALLATION_PACKAGE_DIR}")
   message(STATUS "Maintenance package directory: ${CGAL_MAINTENANCE_PACKAGE_DIR}")
@@ -90,7 +86,7 @@ if ( CGAL_BRANCH_BUILD )
 else ( CGAL_BRANCH_BUILD )
 
   # get release name
-  file(TO_CMAKE_PATH ${PROJECT_SOURCE_DIR} CMAKE_SOURCE_CDIR)
+  file(TO_CMAKE_PATH ${CMAKE_SOURCE_DIR} CMAKE_SOURCE_CDIR)
   string(REGEX REPLACE "^/" "" CMAKE_SOURCE_DDIR ${CMAKE_SOURCE_CDIR})
   string(REPLACE "/" ";" CMAKE_SOURCE_PDIR ${CMAKE_SOURCE_DDIR})
   list(GET CMAKE_SOURCE_PDIR -1 CGAL_RELEASE_NAME)
@@ -99,12 +95,12 @@ else ( CGAL_BRANCH_BUILD )
   set(CGAL_CONFIGURED_PACKAGES_NAMES ${CGAL_RELEASE_NAME})
 
   # list packages
-  set(CGAL_CONFIGURED_PACKAGES "${PROJECT_SOURCE_DIR}")
+  set(CGAL_CONFIGURED_PACKAGES "${CMAKE_SOURCE_DIR}")
 
-  set(CGAL_INSTALLATION_PACKAGE_DIR "${PROJECT_SOURCE_DIR}" CACHE INTERNAL "Directory containing the Installation package")
-  set(CGAL_MAINTENANCE_PACKAGE_DIR "${PROJECT_SOURCE_DIR}" CACHE INTERNAL "Directory containing the Maintenance package")
-  set(CGAL_CORE_PACKAGE_DIR "${PROJECT_SOURCE_DIR}" CACHE INTERNAL "Directory containing the Core package")
-  set(CGAL_GRAPHICSVIEW_PACKAGE_DIR "${PROJECT_SOURCE_DIR}" CACHE INTERNAL "Directory containing the GraphicsView package")
+  set(CGAL_INSTALLATION_PACKAGE_DIR "${CMAKE_SOURCE_DIR}" CACHE INTERNAL "Directory containing the Installation package")
+  set(CGAL_MAINTENANCE_PACKAGE_DIR "${CMAKE_SOURCE_DIR}" CACHE INTERNAL "Directory containing the Maintenance package")
+  set(CGAL_CORE_PACKAGE_DIR "${CMAKE_SOURCE_DIR}" CACHE INTERNAL "Directory containing the Core package")
+  set(CGAL_GRAPHICSVIEW_PACKAGE_DIR "${CMAKE_SOURCE_DIR}" CACHE INTERNAL "Directory containing the GraphicsView package")
 
   # Enable testing with BUILD_TESTING
   option(BUILD_TESTING "Build the testing tree." OFF)
@@ -120,7 +116,7 @@ endif (CGAL_BRANCH_BUILD )
 #message(STATUS "Packages found: ${CGAL_CONFIGURED_PACKAGES}")
 
 list(SORT CGAL_CONFIGURED_PACKAGES_NAMES)
-if(IS_DIRECTORY "${PROJECT_SOURCE_DIR}/Documentation")
+if(IS_DIRECTORY "${CMAKE_SOURCE_DIR}/Documentation")
   # Rescope CGAL_CONFIGURED_PACKAGES_NAMES
   # We need this variable in the Doxygen configuration process. Reset it
   # and change the scope to the parent scope.
@@ -250,7 +246,7 @@ if ( CGAL_BRANCH_BUILD )
 
 else()
 
-  if (NOT EXISTS "${PROJECT_SOURCE_DIR}/VERSION" OR NOT EXISTS "${PROJECT_SOURCE_DIR}/include/CGAL/version.h")
+  if (NOT EXISTS "${CMAKE_SOURCE_DIR}/VERSION" OR NOT EXISTS "${CMAKE_SOURCE_DIR}/include/CGAL/version.h")
     message(FATAL_ERROR "File VERSION or include/CGAL/version.h are missing, required by release-build.")
   endif()
 
@@ -258,7 +254,7 @@ else()
   # Read and parse CGAL version number from VERSION file
   #
 
-  file( READ "${PROJECT_SOURCE_DIR}/VERSION" CGAL_VERSION )
+  file( READ "${CMAKE_SOURCE_DIR}/VERSION" CGAL_VERSION )
   # Comment from Laurent Rineau, 2012/06/28:
   #   file(READ ..) should be replace by file(STRINGS ..), and then we take
   #   the first line. That would avoid parsing errors when the VERSION file
@@ -570,8 +566,8 @@ message("== Detect external libraries ==")
 # Remarks: 
 #  External libs configured when Qt5 lib of cgal are required
 #  Coin is used in KDS, but no FindCoin or FindCOIN exists
-#  There exists FindF2C, FindIPE, FindMKL, but they are only used to support supporting libs
-list (INSERT CGAL_SUPPORTING_3RD_PARTY_LIBRARIES 0 GMP MPFR ZLIB OpenGL LEDA MPFI RS RS3 OpenNL Eigen3 BLAS LAPACK ESBTL Coin3D NTL IPE)
+#  There exists FindIPE, FindMKL, but they are only used to support supporting libs
+list (INSERT CGAL_SUPPORTING_3RD_PARTY_LIBRARIES 0 GMP MPFR ZLIB OpenGL LEDA MPFI RS RS3 OpenNL Eigen3 ESBTL Coin3D NTL IPE)
 if (NOT WIN32)
   # GMPXX is not supported on WIN32 machines
   list (INSERT CGAL_SUPPORTING_3RD_PARTY_LIBRARIES 1 GMPXX)
@@ -613,6 +609,8 @@ if(CGAL_DISABLE_GMP)
   unset(WITH_CGAL_Core CACHE)
   unset(WITH_GMP)
   unset(WITH_GMP CACHE)
+  unset(CGAL_USE_GMP)
+  unset(CGAL_USE_GMP CACHE)
   unset(WITH_GMPXX)
   unset(WITH_GMPXX CACHE)
   unset(WITH_MPFR)
@@ -910,7 +908,7 @@ install(PROGRAMS ${scripts} DESTINATION ${CGAL_INSTALL_BIN_DIR})
 install(DIRECTORY ${CGAL_MODULES_REL_DIR}/                DESTINATION ${CGAL_INSTALL_CMAKE_DIR} )
 install(FILES     ${CGAL_MODULES_REL_DIR}/UseCGAL.cmake   DESTINATION ${CGAL_INSTALL_CMAKE_DIR} )
 
-if ( GMP_IN_CGAL_AUXILIARY OR MPFR_IN_CGAL_AUXILIARY )
+if ( IS_DIRECTORY auxiliary/gmp/include AND IS_DIRECTORY auxiliary/gmp/lib )
   install(DIRECTORY auxiliary/gmp/include/ DESTINATION ${CGAL_INSTALL_INC_DIR} )
   install(DIRECTORY auxiliary/gmp/lib/     DESTINATION ${CGAL_INSTALL_LIB_DIR} )
 endif()
@@ -927,7 +925,10 @@ if(NOT CGAL_HEADER_ONLY)
     ${CMAKE_BINARY_DIR}/config/CGALConfig.cmake
     DESTINATION ${CGAL_INSTALL_CMAKE_DIR} )
 else()
+  configure_file(${CMAKE_CURRENT_LIST_DIR}/lib/cmake/CGAL/CGALConfig-installation-dirs.cmake.in
+    ${CMAKE_BINARY_DIR}/config/CGALConfig-installation-dirs.cmake)
   install(FILES
+    ${CMAKE_BINARY_DIR}/config/CGALConfig-installation-dirs.cmake
     ${CMAKE_CURRENT_LIST_DIR}/lib/cmake/CGAL/CGALConfig.cmake
     DESTINATION ${CGAL_INSTALL_CMAKE_DIR} )
 endif()
@@ -959,14 +960,19 @@ endif()
 #
 #--------------------------------------------------------------------------------------------------
 
+if(NOT TARGET ALL_CGAL_TARGETS)
+  add_custom_target( ALL_CGAL_TARGETS )
+endif()
+
 macro( add_programs subdir target ON_OFF )
+
+  cache_set( CGAL_EXECUTABLE_TARGETS "" )
+  
+  add_custom_target( ${target} )
+  add_dependencies( ALL_CGAL_TARGETS ${target} )
 
   option( WITH_${target} "Select ${target}" ${ON_OFF} )
   if ( WITH_${target} )
-    cache_set( CGAL_EXECUTABLE_TARGETS "" )
-      
-    add_custom_target( ${target} )
-  
     add_subdirectory( ${subdir} EXCLUDE_FROM_ALL )
   endif()
   

@@ -2,19 +2,10 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
-// You can redistribute it and/or modify it under the terms of the GNU
-// General Public License as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: GPL-3.0+
+// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
 //
 //
 // Author(s)     : Stéphane Tayeb
@@ -157,8 +148,6 @@ init_c3t3(C3T3& c3t3, const MeshDomain& domain, const MeshCriteria&,
                                              nb_initial_points);
   else //use default number of points
     domain.construct_initial_points_object()(std::back_inserter(initial_points));
-  std::cout << "[CGAL] init_c3t3: " << initial_points.size()
-      << " points constructed" << std::endl;
 
   typename C3T3::Triangulation::Geom_traits::Construct_weighted_point_3 cwp =
       c3t3.triangulation().geom_traits().construct_weighted_point_3_object();
@@ -199,18 +188,31 @@ template < typename C3T3, typename MeshDomain, typename MeshCriteria>
 void init_c3t3_with_features(C3T3& c3t3,
                              const MeshDomain& domain,
                              const MeshCriteria& criteria,
-                             bool nonlinear = false)
+                             bool nonlinear = false,
+                             std::size_t maximal_number_of_vertices = 0,
+                             Mesh_error_code* pointer_to_error_code = 0
+#ifndef CGAL_NO_ATOMIC
+                             , CGAL::cpp11::atomic<bool>* pointer_to_stop = 0
+#endif
+                             )
 {
-  std::cout << "[CGAL] init_c3t3_with_features started..." << std::endl;
   typedef typename MeshCriteria::Edge_criteria Edge_criteria;
   typedef Edge_criteria_sizing_field_wrapper<Edge_criteria> Sizing_field;
 
   CGAL::Mesh_3::Protect_edges_sizing_field<C3T3,MeshDomain,Sizing_field>
-    protect_edges(c3t3, domain, Sizing_field(criteria.edge_criteria_object()));
+    protect_edges(c3t3,
+                  domain,
+                  Sizing_field(criteria.edge_criteria_object()),
+                  typename Edge_criteria::FT(),
+                  maximal_number_of_vertices,
+                  pointer_to_error_code
+#ifndef CGAL_NO_ATOMIC
+                  , pointer_to_stop
+#endif
+                  );
   protect_edges.set_nonlinear_growth_of_balls(nonlinear);
 
   protect_edges(true);
-  std::cout << "done." << std::endl;
 }
 
 // This class is only used as base for specializations of C3t3_initializer
@@ -226,12 +228,21 @@ struct C3t3_initializer_base
 
   // Not calling 'init_c3t3_with_features' directly to leave it as a free function
   // outside of the C3T3_initializer class
-  virtual void initialize_features(C3T3& c3t3,
-                                   const MeshDomain& domain,
-                                   const MeshCriteria& criteria,
-                                   bool nonlinear = false)
+  virtual void
+  initialize_features(C3T3& c3t3,
+                      const MeshDomain& domain,
+                      const MeshCriteria& criteria,
+                      const parameters::internal::Mesh_3_options& mesh_options)
   {
-    return Mesh_3::internal::init_c3t3_with_features(c3t3, domain, criteria, nonlinear);
+    return Mesh_3::internal::init_c3t3_with_features
+      (c3t3, domain, criteria,
+       mesh_options.nonlinear_growth_of_balls,
+       mesh_options.maximal_number_of_vertices,
+       mesh_options.pointer_to_error_code
+#ifndef CGAL_NO_ATOMIC
+       , mesh_options.pointer_to_stop_atomic_boolean
+#endif
+       );
   }
 };
 
@@ -248,12 +259,12 @@ struct C3t3_initializer { };
 template < typename C3T3, typename MD, typename MC, typename HasFeatures >
 struct C3t3_initializer < C3T3, MD, MC, false, HasFeatures >
 {
+  typedef parameters::internal::Mesh_3_options Mesh_3_options;
   void operator()(C3T3& c3t3,
                   const MD& domain,
                   const MC& criteria,
                   bool with_features,
-                  bool /* nonlinear */= false,
-                  const int nb_initial_points = -1)
+                  Mesh_3_options mesh_options = Mesh_3_options())
   {
     if ( with_features )
     {
@@ -261,7 +272,8 @@ struct C3t3_initializer < C3T3, MD, MC, false, HasFeatures >
                 << " without features !" << std::endl;
     }
 
-    init_c3t3(c3t3,domain,criteria,nb_initial_points);
+    init_c3t3(c3t3,domain,criteria,
+              mesh_options.number_of_initial_points);
   }
 };
 
@@ -270,15 +282,15 @@ struct C3t3_initializer < C3T3, MD, MC, false, HasFeatures >
 template < typename C3T3, typename MD, typename MC, typename HasFeatures >
 struct C3t3_initializer < C3T3, MD, MC, true, HasFeatures >
 {
+  typedef parameters::internal::Mesh_3_options Mesh_3_options;
   void operator()(C3T3& c3t3,
                   const MD& domain,
                   const MC& criteria,
                   bool with_features,
-                  bool nonlinear = false,
-                  const int nb_initial_points = -1)
+                  Mesh_3_options mesh_options = Mesh_3_options())
   {
     C3t3_initializer < C3T3, MD, MC, true, typename MD::Has_features >()
-      (c3t3,domain,criteria,with_features,nonlinear,nb_initial_points);
+      (c3t3,domain,criteria,with_features,mesh_options);
   }
 };
 
@@ -291,15 +303,15 @@ struct C3t3_initializer < C3T3, MD, MC, true, CGAL::Tag_true >
 {
   virtual ~C3t3_initializer() { }
 
+  typedef parameters::internal::Mesh_3_options Mesh_3_options;
   void operator()(C3T3& c3t3,
                   const MD& domain,
                   const MC& criteria,
                   bool with_features,
-                  bool nonlinear = false,
-                  const int nb_initial_points = -1)
+                  Mesh_3_options mesh_options = Mesh_3_options())
   {
     if ( with_features ) {
-      this->initialize_features(c3t3, domain, criteria, nonlinear);
+      this->initialize_features(c3t3, domain, criteria,mesh_options);
 
       // If c3t3 initialization is not sufficient (may happen if there is only
       // a planar curve as feature for example), add some surface points
@@ -310,17 +322,16 @@ struct C3t3_initializer < C3T3, MD, MC, true, CGAL::Tag_true >
         helper.update_restricted_facets();
 
         if (c3t3.number_of_facets() == 0) {
-          std::cout << "[CGAL] initialization yield 0 facets, need more init..." << std::endl;
           need_more_init = true;
         }
       }
       if(need_more_init) {
-        std::cout << "[CGAL] init_c3t3_with_features need more initialization, "
-            << "falling back to init_c3t3..." << std::endl;
-        init_c3t3(c3t3, domain, criteria, nb_initial_points);
+        init_c3t3(c3t3, domain, criteria,
+                  mesh_options.number_of_initial_points);
       }
     }
-    else { init_c3t3(c3t3,domain,criteria,nb_initial_points); }
+    else { init_c3t3(c3t3,domain,criteria,
+                     mesh_options.number_of_initial_points); }
   }
 };
 
@@ -330,12 +341,12 @@ struct C3t3_initializer < C3T3, MD, MC, true, CGAL::Tag_true >
 template < typename C3T3, typename MD, typename MC >
 struct C3t3_initializer < C3T3, MD, MC, true, CGAL::Tag_false >
 {
+  typedef parameters::internal::Mesh_3_options Mesh_3_options;
   void operator()(C3T3& c3t3,
                   const MD& domain,
                   const MC& criteria,
                   bool with_features,
-                  bool /* nonlinear */ = false,
-                  const int nb_initial_points = -1)
+                  Mesh_3_options mesh_options = Mesh_3_options())
   {
     if ( with_features )
     {
@@ -343,7 +354,8 @@ struct C3t3_initializer < C3T3, MD, MC, true, CGAL::Tag_false >
                 << " without features !" << std::endl;
     }
 
-    init_c3t3(c3t3,domain,criteria,nb_initial_points);
+    init_c3t3(c3t3,domain,criteria,
+              mesh_options.number_of_initial_points);
   }
 };
 
@@ -357,8 +369,6 @@ struct C3t3_initializer < C3T3, MD, MC, true, CGAL::Tag_false >
 
 // Manual redirections
 // boost::parameter can't handle make_mesh_3 return_type alone...
-#ifndef CGAL_CFG_NO_CPP0X_VARIADIC_TEMPLATES
-
 template <typename C3T3, typename MD, typename MC, typename ... T>
 C3T3 make_mesh_3(const MD& md, const MC& mc, const T& ...t)
 {
@@ -366,66 +376,6 @@ C3T3 make_mesh_3(const MD& md, const MC& mc, const T& ...t)
   make_mesh_3_bp(c3t3,md,mc,t...);
   return c3t3;
 }
-
-#else
-
-template <typename C3T3, typename MD, typename MC>
-C3T3 make_mesh_3(const MD& md, const MC& mc)
-{
-  C3T3 c3t3;
-  make_mesh_3_bp(c3t3,md,mc);
-  return c3t3;
-}
-
-template <typename C3T3, typename MD, typename MC,
-  typename Arg1>
-C3T3 make_mesh_3(const MD& md, const MC& mc, const Arg1& a1)
-{
-  C3T3 c3t3;
-  make_mesh_3_bp(c3t3,md,mc,a1);
-  return c3t3;
-}
-
-template <typename C3T3, typename MD, typename MC,
-  typename Arg1, typename Arg2>
-C3T3 make_mesh_3(const MD& md, const MC& mc, const Arg1& a1, const Arg2& a2)
-{
-  C3T3 c3t3;
-  make_mesh_3_bp(c3t3,md,mc,a1,a2);
-  return c3t3;
-}
-
-template <typename C3T3, typename MD, typename MC,
-  typename Arg1, typename Arg2, typename Arg3>
-C3T3 make_mesh_3(const MD& md, const MC& mc, const Arg1& a1, const Arg2& a2,
-                 const Arg3& a3)
-{
-  C3T3 c3t3;
-  make_mesh_3_bp(c3t3,md,mc,a1,a2,a3);
-  return c3t3;
-}
-
-template <typename C3T3, typename MD, typename MC,
-  typename Arg1, typename Arg2, typename Arg3, typename Arg4>
-C3T3 make_mesh_3(const MD& md, const MC& mc, const Arg1& a1, const Arg2& a2,
-                 const Arg3& a3, const Arg4& a4)
-{
-  C3T3 c3t3;
-  make_mesh_3_bp(c3t3,md,mc,a1,a2,a3,a4);
-  return c3t3;
-}
-
-template <typename C3T3, typename MD, typename MC,
-  typename Arg1, typename Arg2, typename Arg3, typename Arg4, typename Arg5>
-C3T3 make_mesh_3(const MD& md, const MC& mc, const Arg1& a1, const Arg2& a2,
-                 const Arg3& a3, const Arg4& a4, const Arg5& a5)
-{
-  C3T3 c3t3;
-  make_mesh_3_bp(c3t3,md,mc,a1,a2,a3,a4,a5);
-  return c3t3;
-}
-
-#endif
 
 #if defined(BOOST_MSVC)
 #  pragma warning(push)
@@ -498,7 +448,6 @@ void make_mesh_3_impl(C3T3& c3t3,
   CGAL::get_default_random() = CGAL::Random(0);
 #endif
 
-  std::cout << "[CGAL] initialization started." << std::endl;
   // Initialize c3t3
   Mesh_3::internal::C3t3_initializer<
     C3T3,
@@ -508,24 +457,12 @@ void make_mesh_3_impl(C3T3& c3t3,
             domain,
             criteria,
             with_features,
-            mesh_options.nonlinear_growth_of_balls,
-            mesh_options.number_of_initial_points);
+            mesh_options);
 
-  std::cout << "[CGAL] C3t3 initialization completed with "
-      << c3t3.number_of_cells() << " cells, "
-      << c3t3.number_of_facets() << " facets" << std::endl;
-  std::cout << "[CGAL] C3t3 triangulation has "
-      << c3t3.triangulation().number_of_vertices() << " vertices "
-      << c3t3.triangulation().number_of_facets() << " facets "
-      << c3t3.triangulation().number_of_cells() << " cells" << std::endl;
-  //std::ofstream fout("tmp.mesh");
-  //c3t3.output_to_medit(fout);
-  //fout.close();
-  CGAL_assertion( c3t3.triangulation().dimension() == 3 );
+  CGAL_assertion( c3t3.triangulation().dimension() >= 2 );
 
   // Build mesher and launch refinement process
   // Don't reset c3t3 as we just created it
-  std::cout << "[CGAL] refinement started." << std::endl;
   refine_mesh_3(c3t3, domain, criteria,
                 exude, perturb, odt, lloyd, parameters::no_reset_c3t3(), mesh_options,
                 manifold_options);
