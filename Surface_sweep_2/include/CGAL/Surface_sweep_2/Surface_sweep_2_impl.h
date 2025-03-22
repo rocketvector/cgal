@@ -268,7 +268,7 @@ void Surface_sweep_2<Vis>::_handle_overlaps_in_right_curves()
         it->second.erase(last, it->second.end());
         nbc=it->second.size();
       }
-      CGAL_assertion( std::set<Subcurve*>(it->second.begin(), it->second.end()).size() == nbc);
+      CGAL_assertion(it->second.size() == nbc);
 
       //  clipping only one curve is sufficient since we compute an intersection
       _clip_non_active_curve_at_current_event(it->second.front());
